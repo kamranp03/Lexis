@@ -4,3 +4,4 @@ venv-win
 ppt_content.txt
 .claude
 __pycache__
+backend/.env.local
