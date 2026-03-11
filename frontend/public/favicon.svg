@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background rounded rect -->
+  <rect width="32" height="32" rx="8" fill="#0f172a"/>
+
+  <!-- Database cylinder body -->
+  <ellipse cx="15" cy="10" rx="7" ry="2.5" fill="#3b82f6"/>
+  <rect x="8" y="10" width="14" height="10" fill="#2563eb"/>
+  <ellipse cx="15" cy="20" rx="7" ry="2.5" fill="#3b82f6"/>
+
+  <!-- Shine line on cylinder -->
+  <ellipse cx="15" cy="10" rx="7" ry="2.5" fill="none" stroke="#93c5fd" stroke-width="0.6" opacity="0.6"/>
+
+  <!-- AI spark top-right -->
+  <circle cx="24" cy="8" r="4.5" fill="#7c3aed"/>
+  <path d="M24 5.5 L24.5 7.5 L26.5 8 L24.5 8.5 L24 10.5 L23.5 8.5 L21.5 8 L23.5 7.5 Z" fill="white"/>
+</svg>

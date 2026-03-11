@@ -25,9 +25,7 @@ def execute_query(db_type: str, config: ConnectionConfig, query: str) -> QueryRe
     start = time.time()
 
     try:
-        if db_type == "postgresql":
-            return _execute_sql(db_type, config, query, start)
-        elif db_type == "oracle":
+        if db_type in ("postgresql", "mysql", "oracle"):
             return _execute_sql(db_type, config, query, start)
         elif db_type == "mongodb":
             return _execute_mongodb(config, query, start)

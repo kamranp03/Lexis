@@ -32,3 +32,8 @@ app.include_router(ai.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/status")
+async def status():
+    return {"status": "ok"}

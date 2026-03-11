@@ -19,10 +19,10 @@ function App() {
   const [aiText, setAiText] = useState('');
   const darkMode = useAppStore(s => s.darkMode);
 
-  // Apply dark mode class on mount
+  // Apply dark mode class
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
-  }, []);
+  }, [darkMode]);
 
   const refreshHistory = () => {
     if (activeConnection) {

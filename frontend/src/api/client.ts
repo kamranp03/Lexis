@@ -15,7 +15,7 @@ export interface ConnectionConfig {
 export interface Connection {
   id: number;
   name: string;
-  db_type: 'postgresql' | 'mongodb' | 'oracle';
+  db_type: 'postgresql' | 'mysql' | 'mongodb' | 'oracle';
   config: ConnectionConfig;
   created_at: string;
   last_used?: string;
@@ -65,6 +65,7 @@ export interface TableDetail {
 
 export interface Drivers {
   postgresql: boolean;
+  mysql: boolean;
   mongodb: boolean;
   oracle: boolean;
 }
@@ -99,8 +100,8 @@ export interface AIResponse {
   error?: string;
 }
 
-export const aiNlToQuery = (connection_id: number, prompt: string) =>
-  api.post<AIResponse>('/ai/nl-to-query', { connection_id, prompt }).then(r => r.data);
+export const aiNlToQuery = (connection_id: number, prompt: string, generate_only = false) =>
+  api.post<AIResponse>('/ai/nl-to-query', { connection_id, prompt, generate_only }).then(r => r.data);
 
 export const aiExplainResults = (connection_id: number, query: string, results: Record<string, unknown>[]) =>
   api.post<AIResponse>('/ai/explain-results', { connection_id, query, results }).then(r => r.data);

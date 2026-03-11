@@ -3,24 +3,40 @@ import { Star, RotateCw, Trash2, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import { toggleFavorite, deleteHistoryEntry, getHistory } from '../../api/client';
 
+function timeAgo(ts: string) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export function HistoryPanel() {
   const { history, setHistory, activeConnection, setQueryText } = useAppStore();
   const [showFavOnly, setShowFavOnly] = useState(false);
 
   if (!activeConnection) {
-    return <p className="px-3 py-4 text-xs text-[var(--text-tertiary)] text-center">Select a connection first</p>;
+    return (
+      <p className="px-4 py-6 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
+        Select a connection first
+      </p>
+    );
   }
 
   const refresh = () => {
     getHistory({ connection_id: activeConnection.id, limit: 50 }).then(setHistory).catch(() => {});
   };
 
-  const handleToggleFav = async (id: number) => {
+  const handleToggleFav = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     await toggleFavorite(id);
     refresh();
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     await deleteHistoryEntry(id);
     refresh();
   };
@@ -29,65 +45,96 @@ export function HistoryPanel() {
 
   return (
     <div>
-      {/* Filter bar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)]">
-        <button
-          onClick={() => setShowFavOnly(false)}
-          className={`text-[10px] px-2 py-0.5 rounded-full border ${!showFavOnly ? 'border-[var(--accent)] text-[var(--accent)] bg-blue-50' : 'border-[var(--border)] text-[var(--text-tertiary)]'}`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setShowFavOnly(true)}
-          className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${showFavOnly ? 'border-yellow-400 text-yellow-600 bg-yellow-50' : 'border-[var(--border)] text-[var(--text-tertiary)]'}`}
-        >
-          <Star size={8} /> Favorites
-        </button>
+      <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
+        {(['All', 'Favorites'] as const).map(label => {
+          const isFav = label === 'Favorites';
+          const active = isFav ? showFavOnly : !showFavOnly;
+          return (
+            <button
+              key={label}
+              onClick={() => setShowFavOnly(isFav)}
+              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors"
+              style={{
+                border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
+                color: active ? 'var(--accent)' : 'var(--text-tertiary)',
+                background: active ? 'rgba(59,130,246,0.08)' : 'transparent',
+              }}
+            >
+              {isFav && <Star size={9} />}
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {filtered.length === 0 ? (
-        <p className="px-3 py-4 text-xs text-[var(--text-tertiary)] text-center">
+        <p className="px-4 py-6 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
           {showFavOnly ? 'No favorites yet' : 'No history yet'}
         </p>
       ) : (
         <div className="py-1">
           {filtered.map(entry => (
-            <div key={entry.id} className="group px-3 py-2 hover:bg-[var(--bg-hover)] transition-colors">
+            <div
+              key={entry.id}
+              className="group px-4 py-2.5 cursor-pointer transition-colors"
+              onClick={() => setQueryText(entry.query_text)}
+              style={{ borderBottom: '1px solid var(--border)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
                     {entry.query_type === 'nlp_generated' && (
-                      <Sparkles size={10} className="text-[var(--accent)] shrink-0" />
+                      <Sparkles size={10} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                     )}
-                    <p className="text-xs font-mono truncate text-[var(--text-primary)]">{entry.query_text}</p>
+                    <p className="text-[12px] font-mono truncate" style={{ color: 'var(--text-primary)' }}>
+                      {entry.query_text}
+                    </p>
                   </div>
                   {entry.nl_prompt && (
-                    <p className="text-[10px] text-[var(--accent)] truncate mt-0.5">"{entry.nl_prompt}"</p>
+                    <p className="text-[11px] truncate mb-1" style={{ color: 'var(--accent)' }}>
+                      "{entry.nl_prompt}"
+                    </p>
                   )}
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[10px] ${entry.status === 'success' ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium"
+                      style={{ color: entry.status === 'success' ? 'var(--success)' : 'var(--error)' }}>
                       {entry.status}
                     </span>
                     {entry.execution_ms != null && (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">{entry.execution_ms}ms</span>
+                      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{entry.execution_ms}ms</span>
                     )}
                     {entry.row_count != null && (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">{entry.row_count} rows</span>
+                      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{entry.row_count} rows</span>
                     )}
-                    <span className="text-[10px] text-[var(--text-tertiary)]">
-                      {new Date(entry.created_at).toLocaleTimeString()}
+                    <span className="text-[10px] ml-auto" style={{ color: 'var(--text-tertiary)' }}>
+                      {timeAgo(entry.created_at)}
                     </span>
                   </div>
                 </div>
-                <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-                  <button onClick={() => setQueryText(entry.query_text)} className="p-1 rounded hover:bg-[var(--border)]" title="Load query">
-                    <RotateCw size={11} className="text-[var(--text-tertiary)]" />
+
+                <div className="hidden group-hover:flex items-center gap-0.5 shrink-0 mt-0.5">
+                  <button onClick={e => { e.stopPropagation(); setQueryText(entry.query_text); }}
+                    className="p-1 rounded" style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-active)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    title="Load query">
+                    <RotateCw size={11} />
                   </button>
-                  <button onClick={() => handleToggleFav(entry.id)} className="p-1 rounded hover:bg-[var(--border)]" title="Toggle favorite">
-                    <Star size={11} className={entry.is_favorite ? 'text-yellow-500 fill-yellow-500' : 'text-[var(--text-tertiary)]'} />
+                  <button onClick={e => handleToggleFav(e, entry.id)}
+                    className="p-1 rounded"
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-active)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    title="Toggle favorite">
+                    <Star size={11} style={{ color: entry.is_favorite ? '#eab308' : 'var(--text-tertiary)', fill: entry.is_favorite ? '#eab308' : 'none' }} />
                   </button>
-                  <button onClick={() => handleDelete(entry.id)} className="p-1 rounded hover:bg-[var(--border)]" title="Delete">
-                    <Trash2 size={11} className="text-[var(--text-tertiary)]" />
+                  <button onClick={e => handleDelete(e, entry.id)}
+                    className="p-1 rounded" style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-active)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--error)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'; }}
+                    title="Delete">
+                    <Trash2 size={11} />
                   </button>
                 </div>
               </div>

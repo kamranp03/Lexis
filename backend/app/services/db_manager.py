@@ -11,6 +11,7 @@ def detect_available_drivers() -> dict[str, bool]:
         "postgresql": "psycopg2",
         "mongodb": "pymongo",
         "oracle": "oracledb",
+        "mysql": "pymysql",
     }
     result = {}
     for db_type, module_name in drivers.items():
@@ -35,10 +36,20 @@ def build_connection_params(db_type: str, config: ConnectionConfig) -> dict[str,
             "password": config.password or "",
             "dbname": config.database or "postgres",
         }
+    elif db_type == "mysql":
+        return {
+            "host": config.host or "localhost",
+            "port": config.port or 3306,
+            "user": config.username or "root",
+            "password": config.password or "",
+            "database": config.database or "",
+        }
     elif db_type == "mongodb":
         host = config.host or "localhost"
         port = config.port or 27017
-        return {"uri": f"mongodb://{config.username}:{config.password}@{host}:{port}/{config.database or 'admin'}"}
+        if config.username and config.password:
+            return {"uri": f"mongodb://{config.username}:{config.password}@{host}:{port}/{config.database or 'admin'}"}
+        return {"uri": f"mongodb://{host}:{port}/{config.database or 'admin'}"}
     elif db_type == "oracle":
         return {
             "user": config.username or "",
@@ -59,6 +70,15 @@ def test_connection(db_type: str, config: ConnectionConfig) -> tuple[bool, str]:
                 conn = psycopg2.connect(params["uri"])
             else:
                 conn = psycopg2.connect(**params)
+            conn.close()
+            return True, "Connection successful"
+
+        elif db_type == "mysql":
+            import pymysql
+            if "uri" in params:
+                conn = pymysql.connect(**_parse_mysql_uri(params["uri"]))
+            else:
+                conn = pymysql.connect(**params)
             conn.close()
             return True, "Connection successful"
 
@@ -95,13 +115,18 @@ def get_connection(db_type: str, config: ConnectionConfig):
             return psycopg2.connect(params["uri"])
         return psycopg2.connect(**params)
 
+    elif db_type == "mysql":
+        import pymysql
+        if "uri" in params:
+            return pymysql.connect(**_parse_mysql_uri(params["uri"]))
+        return pymysql.connect(**params)
+
     elif db_type == "mongodb":
         from pymongo import MongoClient
         uri = params.get("uri", "mongodb://localhost:27017")
         client = MongoClient(uri, serverSelectionTimeoutMS=10000)
         db_name = config.database or "admin"
         if config.uri:
-            # Extract db name from URI
             from urllib.parse import urlparse
             parsed = urlparse(config.uri)
             db_name = parsed.path.lstrip("/") or "admin"
@@ -114,3 +139,16 @@ def get_connection(db_type: str, config: ConnectionConfig):
         return oracledb.connect(**params)
 
     raise ValueError(f"Unsupported database type: {db_type}")
+
+
+def _parse_mysql_uri(uri: str) -> dict:
+    """Parse a MySQL URI into pymysql connect kwargs."""
+    from urllib.parse import urlparse
+    p = urlparse(uri)
+    return {
+        "host": p.hostname or "localhost",
+        "port": p.port or 3306,
+        "user": p.username or "root",
+        "password": p.password or "",
+        "database": p.path.lstrip("/") or "",
+    }

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,8 +29,8 @@ async def list_connections(db: AsyncSession = Depends(get_db)):
 
 @router.post("", response_model=ConnectionResponse)
 async def create_connection(data: ConnectionCreate, db: AsyncSession = Depends(get_db)):
-    if data.db_type not in ("postgresql", "mongodb", "oracle"):
-        raise HTTPException(400, "db_type must be postgresql, mongodb, or oracle")
+    if data.db_type not in ("postgresql", "mysql", "mongodb", "oracle"):
+        raise HTTPException(400, "db_type must be postgresql, mysql, mongodb, or oracle")
 
     conn = ConnectionORM(
         name=data.name,
@@ -80,7 +81,7 @@ async def test_conn(conn_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(404, "Connection not found")
 
     config = ConnectionConfig.model_validate_json(conn.config)
-    success, message = test_connection(conn.db_type, config)
+    success, message = await asyncio.to_thread(test_connection, conn.db_type, config)
     return {"success": success, "message": message}
 
 

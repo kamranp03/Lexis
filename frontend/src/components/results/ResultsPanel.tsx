@@ -1,26 +1,28 @@
 import { useAppStore } from '../../stores/appStore';
 import { SQLTable } from './SQLTable';
 import { DocumentView } from './DocumentView';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Database } from 'lucide-react';
 
 export function ResultsPanel() {
   const { queryResult, isExecuting } = useAppStore();
 
   if (isExecuting) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-[var(--text-secondary)]">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-          Executing query...
-        </div>
+      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-tertiary)' }}>
+        <div
+          className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
+        />
+        <span className="text-sm">Executing query...</span>
       </div>
     );
   }
 
   if (!queryResult) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-[var(--text-tertiary)]">
-        Run a query to see results
+      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-tertiary)' }}>
+        <Database size={36} strokeWidth={1.2} />
+        <span className="text-sm">Run a query or ask in natural language</span>
       </div>
     );
   }
@@ -28,11 +30,16 @@ export function ResultsPanel() {
   if (queryResult.error) {
     return (
       <div className="p-4">
-        <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 border border-red-200">
-          <AlertCircle size={16} className="text-[var(--error)] shrink-0 mt-0.5" />
+        <div
+          className="flex items-start gap-3 p-4 rounded-lg"
+          style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)' }}
+        >
+          <AlertCircle size={16} style={{ color: 'var(--error)', flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p className="text-sm font-medium text-[var(--error)]">Query Error</p>
-            <pre className="mt-1 text-xs text-red-700 whitespace-pre-wrap font-mono">{queryResult.error}</pre>
+            <p className="text-sm font-semibold mb-1" style={{ color: 'var(--error)' }}>Query Error</p>
+            <pre className="text-xs whitespace-pre-wrap font-mono" style={{ color: 'var(--text-secondary)' }}>
+              {queryResult.error}
+            </pre>
           </div>
         </div>
       </div>

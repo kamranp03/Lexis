@@ -1,0 +1,6 @@
+.env.local
+node_modules
+venv-win
+ppt_content.txt
+.claude
+__pycache__

@@ -40,7 +40,7 @@ function DocumentItem({ index, data }: { index: number; data: Record<string, unk
       >
         {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         Document {index + 1}
-        {data._id && <span className="text-[var(--text-tertiary)] ml-1">({String(data._id)})</span>}
+        {data._id != null && <span className="text-[var(--text-tertiary)] ml-1">({String(data._id as string)})</span>}
       </button>
       {expanded && (
         <div className="px-3 py-2 bg-[var(--bg-secondary)] border-t border-[var(--border)]">

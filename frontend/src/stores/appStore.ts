@@ -47,7 +47,14 @@ export const useAppStore = create<AppState>((set) => ({
   connections: [],
   activeConnection: null,
   setConnections: (connections) => set({ connections }),
-  setActiveConnection: (activeConnection) => set({ activeConnection }),
+  setActiveConnection: (activeConnection) => {
+    if (activeConnection) {
+      localStorage.setItem('dbpro-active-conn', String(activeConnection.id));
+    } else {
+      localStorage.removeItem('dbpro-active-conn');
+    }
+    set({ activeConnection });
+  },
 
   queryText: '',
   setQueryText: (queryText) => set({ queryText }),

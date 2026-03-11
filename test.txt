@@ -1,0 +1,55 @@
+
+  SECTION 1: MySQL TESTING
+
+ — NLP Query Testing (MySQL)
+
+1.  Show all students enrolled in Computer Science
+2.  List all courses with more than 3 credits
+3.  Find students who got grade A or A+ in any course
+4.  Show the top 5 highest paid teachers
+5.  Count how many students are in each branch
+6.  List all courses taught by Dr. Asif
+7.  Show all students enrolled in Fall 2023
+8.  Find all teachers in Computer Science department
+9.  Show students older than 21 years
+10. List all students and the courses they are enrolled in
+
+
+================================================================
+  SECTION 2: PostgreSQL TESTING
+================================================================
+
+ — NLP Query Testing (PostgreSQL)
+
+
+1.  Show all employees in the Engineering department
+2.  List employees with salary greater than 90000
+3.  Find all active projects
+4.  Show the top 3 highest paid employees
+5.  Count employees in each department
+6.  List all employees hired after 2019
+7.  Show all projects that are completed
+8.  Find employees working in New York
+9.  Show total salary paid per department
+10. List all employees and the projects they are working on
+
+
+================================================================
+  SECTION 3: MongoDB TESTING
+================================================================
+
+STEP 3 — NLP Query Testing (MongoDB)
+---------------------------------------
+Type these in the NLP search bar after connecting MongoDB:
+
+1.  Show all products in the Electronics category
+2.  List products with price greater than 100
+3.  Find all delivered orders
+4.  Show all active users
+5.  List products with rating above 4.5
+6.  Find all orders placed by Kamran Ali
+7.  Show all users with role admin
+8.  List products with stock less than 50
+9.  Find all pending orders
+10. Show all users from Lahore
+

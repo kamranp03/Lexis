@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +19,7 @@ router = APIRouter(prefix="/api/ai", tags=["ai"])
 class NLQueryRequest(BaseModel):
     connection_id: int
     prompt: str
+    generate_only: bool = False
 
 
 class ExplainRequest(BaseModel):
@@ -57,7 +60,7 @@ async def _get_conn_and_schema(conn_id: int, db: AsyncSession):
     if not conn:
         raise HTTPException(404, "Connection not found")
     config = ConnectionConfig.model_validate_json(conn.config)
-    schema = get_schema_context(conn.db_type, config)
+    schema = await asyncio.to_thread(get_schema_context, conn.db_type, config)
     return conn, config, schema
 
 
@@ -72,7 +75,7 @@ async def nl_to_query(data: NLQueryRequest, db: AsyncSession = Depends(get_db)):
             "db_type": conn.db_type,
             "schema": schema,
         }
-        result = agent.invoke(state)
+        result = await asyncio.to_thread(agent.invoke, state)
 
         generated = result.get("generated_query")
         response = AIResponse(
@@ -80,11 +83,11 @@ async def nl_to_query(data: NLQueryRequest, db: AsyncSession = Depends(get_db)):
             generated_query=generated,
         )
 
-        # Auto-execute SELECT/find queries
-        if generated:
+        # Auto-execute SELECT/find queries (skip if generate_only)
+        if generated and not data.generate_only:
             is_read = _is_read_query(generated, conn.db_type)
             if is_read:
-                exec_result = execute_query(conn.db_type, config, generated)
+                exec_result = await asyncio.to_thread(execute_query, conn.db_type, config, generated)
                 response.executed_result = exec_result.model_dump()
 
                 # Save to history
@@ -135,7 +138,7 @@ async def explain_results_endpoint(data: ExplainRequest, db: AsyncSession = Depe
             "intent": "explain",
         }
         from app.ai.nodes import explain_results
-        result = explain_results(state)
+        result = await asyncio.to_thread(explain_results, state)
         return AIResponse(explanation=result.get("explanation"))
     except Exception as e:
         return AIResponse(error=str(e))
@@ -154,7 +157,7 @@ async def optimize_endpoint(data: OptimizeRequest, db: AsyncSession = Depends(ge
             "intent": "optimize",
         }
         from app.ai.nodes import optimize_query
-        result = optimize_query(state)
+        result = await asyncio.to_thread(optimize_query, state)
         return AIResponse(optimization=result.get("optimization"))
     except Exception as e:
         return AIResponse(error=str(e))
@@ -174,7 +177,7 @@ async def fix_error_endpoint(data: FixRequest, db: AsyncSession = Depends(get_db
             "intent": "fix",
         }
         from app.ai.nodes import fix_query
-        result = fix_query(state)
+        result = await asyncio.to_thread(fix_query, state)
         return AIResponse(fixed_query=result.get("fixed_query"))
     except Exception as e:
         return AIResponse(error=str(e))

@@ -10,6 +10,8 @@ def get_schema_context(db_type: str, config: ConnectionConfig) -> str:
     try:
         if db_type == "postgresql":
             return _pg_schema(config)
+        elif db_type == "mysql":
+            return _mysql_schema(config)
         elif db_type == "oracle":
             return _oracle_schema(config)
         elif db_type == "mongodb":
@@ -56,6 +58,49 @@ def _pg_schema(config: ConnectionConfig) -> str:
             lines.append(f"TABLE {table}:")
             lines.extend(cols)
             # Add FK info
+            for fk in fkeys:
+                if fk[0] == table:
+                    lines.append(f"  FK: {fk[1]} -> {fk[2]}.{fk[3]}")
+            lines.append("")
+
+        return "\n".join(lines) if lines else "No tables found"
+    finally:
+        conn.close()
+
+
+def _mysql_schema(config: ConnectionConfig) -> str:
+    conn = get_connection("mysql", config)
+    try:
+        cur = conn.cursor()
+        db_name = config.database or ""
+        cur.execute("""
+            SELECT t.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE, c.IS_NULLABLE, c.COLUMN_DEFAULT
+            FROM information_schema.TABLES t
+            JOIN information_schema.COLUMNS c
+              ON t.TABLE_NAME = c.TABLE_NAME AND t.TABLE_SCHEMA = c.TABLE_SCHEMA
+            WHERE t.TABLE_SCHEMA = %s
+            ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
+        """, (db_name,))
+        rows = cur.fetchall()
+
+        cur.execute("""
+            SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = %s AND REFERENCED_TABLE_NAME IS NOT NULL
+        """, (db_name,))
+        fkeys = cur.fetchall()
+
+        tables: dict[str, list[str]] = {}
+        for table, col, dtype, nullable, default in rows:
+            if table not in tables:
+                tables[table] = []
+            null_str = "NULL" if nullable == "YES" else "NOT NULL"
+            tables[table].append(f"  {col} {dtype} {null_str}")
+
+        lines = []
+        for table, cols in tables.items():
+            lines.append(f"TABLE {table}:")
+            lines.extend(cols)
             for fk in fkeys:
                 if fk[0] == table:
                     lines.append(f"  FK: {fk[1]} -> {fk[2]}.{fk[3]}")

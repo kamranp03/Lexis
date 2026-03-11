@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -21,8 +23,8 @@ async def run_query(data: QueryRequest, db: AsyncSession = Depends(get_db)):
 
     config = ConnectionConfig.model_validate_json(conn.config)
 
-    # Execute
-    query_result = execute_query(conn.db_type, config, data.query)
+    # Execute (in thread to avoid blocking the asyncio event loop)
+    query_result = await asyncio.to_thread(execute_query, conn.db_type, config, data.query)
 
     # Update last_used
     conn.last_used = func.now()

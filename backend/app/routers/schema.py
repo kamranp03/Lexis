@@ -13,28 +13,40 @@ router = APIRouter(prefix="/api/schema", tags=["schema"])
 async def list_tables(conn_id: int, db: AsyncSession = Depends(get_db)):
     conn_orm = await _get_conn(conn_id, db)
     config = ConnectionConfig.model_validate_json(conn_orm.config)
-
-    if conn_orm.db_type == "postgresql":
-        return _pg_list_tables(config)
-    elif conn_orm.db_type == "oracle":
-        return _oracle_list_tables(config)
-    elif conn_orm.db_type == "mongodb":
-        return _mongo_list_collections(config)
-    raise HTTPException(400, "Unsupported db type")
+    try:
+        if conn_orm.db_type == "postgresql":
+            return _pg_list_tables(config)
+        elif conn_orm.db_type == "mysql":
+            return _mysql_list_tables(config)
+        elif conn_orm.db_type == "oracle":
+            return _oracle_list_tables(config)
+        elif conn_orm.db_type == "mongodb":
+            return _mongo_list_collections(config)
+        raise HTTPException(400, "Unsupported db type")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Could not connect: {e}")
 
 
 @router.get("/{conn_id}/tables/{table_name}")
 async def table_detail(conn_id: int, table_name: str, db: AsyncSession = Depends(get_db)):
     conn_orm = await _get_conn(conn_id, db)
     config = ConnectionConfig.model_validate_json(conn_orm.config)
-
-    if conn_orm.db_type == "postgresql":
-        return _pg_table_detail(config, table_name)
-    elif conn_orm.db_type == "oracle":
-        return _oracle_table_detail(config, table_name)
-    elif conn_orm.db_type == "mongodb":
-        return _mongo_collection_detail(config, table_name)
-    raise HTTPException(400, "Unsupported db type")
+    try:
+        if conn_orm.db_type == "postgresql":
+            return _pg_table_detail(config, table_name)
+        elif conn_orm.db_type == "mysql":
+            return _mysql_table_detail(config, table_name)
+        elif conn_orm.db_type == "oracle":
+            return _oracle_table_detail(config, table_name)
+        elif conn_orm.db_type == "mongodb":
+            return _mongo_collection_detail(config, table_name)
+        raise HTTPException(400, "Unsupported db type")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Could not connect: {e}")
 
 
 async def _get_conn(conn_id: int, db: AsyncSession) -> ConnectionORM:
@@ -96,6 +108,63 @@ def _pg_table_detail(config: ConnectionConfig, table_name: str) -> dict:
             JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
             JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
             WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = %s
+        """, (table_name,))
+        fkeys = [{"column": r[0], "references_table": r[1], "references_column": r[2]} for r in cur.fetchall()]
+
+        return {"name": table_name, "columns": columns, "indexes": indexes, "foreign_keys": fkeys}
+    finally:
+        conn.close()
+
+
+# --- MySQL ---
+
+def _mysql_list_tables(config: ConnectionConfig) -> list[dict]:
+    conn = get_connection("mysql", config)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT table_name, table_type
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ORDER BY table_name
+        """)
+        return [{"name": row[0], "type": row[1]} for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def _mysql_table_detail(config: ConnectionConfig, table_name: str) -> dict:
+    conn = get_connection("mysql", config)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND table_name = %s
+            ORDER BY ordinal_position
+        """, (table_name,))
+        columns = [
+            {"name": r[0], "type": r[1], "nullable": r[2] == "YES", "default": r[3]}
+            for r in cur.fetchall()
+        ]
+
+        cur.execute("""
+            SELECT index_name, GROUP_CONCAT(column_name ORDER BY seq_in_index) as cols
+            FROM information_schema.statistics
+            WHERE table_schema = DATABASE() AND table_name = %s
+            GROUP BY index_name
+        """, (table_name,))
+        indexes = [{"name": r[0], "definition": r[1]} for r in cur.fetchall()]
+
+        cur.execute("""
+            SELECT kcu.column_name, kcu.referenced_table_name, kcu.referenced_column_name
+            FROM information_schema.key_column_usage kcu
+            JOIN information_schema.table_constraints tc
+              ON kcu.constraint_name = tc.constraint_name
+              AND kcu.table_schema = tc.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND kcu.table_schema = DATABASE()
+              AND kcu.table_name = %s
         """, (table_name,))
         fkeys = [{"column": r[0], "references_table": r[1], "references_column": r[2]} for r in cur.fetchall()]
 

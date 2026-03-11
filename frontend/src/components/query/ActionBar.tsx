@@ -1,6 +1,13 @@
-import { Play, Loader2, Sparkles, Zap, Wrench, Download } from 'lucide-react';
+import { Play, Loader2, Lightbulb, Zap, Wrench, Download } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import { exportCSV, exportJSON } from '../../hooks/useExport';
+
+const DB_LABEL: Record<string, { label: string; color: string }> = {
+  postgresql: { label: 'PostgreSQL', color: '#3b82f6' },
+  mongodb:    { label: 'MongoDB',    color: '#22c55e' },
+  mysql:      { label: 'MySQL',      color: '#f97316' },
+  oracle:     { label: 'Oracle',     color: '#ef4444' },
+};
 
 interface Props {
   onExecute: () => void;
@@ -13,51 +20,85 @@ export function ActionBar({ onExecute, onExplain, onOptimize, onFix }: Props) {
   const { isExecuting, activeConnection, queryResult, queryText } = useAppStore();
 
   const hasResult = !!queryResult && !queryResult.error;
-  const hasError = !!queryResult?.error;
-  const hasQuery = !!queryText.trim();
-  const hasExportable = hasResult && ((queryResult?.rows?.length ?? 0) > 0 || (queryResult?.documents?.length ?? 0) > 0);
+  const hasError  = !!queryResult?.error;
+  const hasQuery  = !!queryText.trim();
+  const hasExportable = hasResult && (
+    (queryResult?.rows?.length ?? 0) > 0 || (queryResult?.documents?.length ?? 0) > 0
+  );
 
-  const btnCls = "flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors";
+  const db = activeConnection
+    ? (DB_LABEL[activeConnection.db_type] || { label: activeConnection.db_type, color: '#888' })
+    : null;
+
+  const ghostCls = "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+  const ghostStyle = { borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'transparent' } as React.CSSProperties;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
+    <div
+      className="flex items-center gap-1.5 px-4 py-2"
+      style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-primary)' }}
+    >
+      {/* Run */}
       <button
         onClick={onExecute}
         disabled={isExecuting || !activeConnection}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[var(--accent)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white rounded-md disabled:opacity-50 transition-colors"
+        style={{ background: 'var(--accent)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)'; }}
       >
         {isExecuting ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
         {isExecuting ? 'Running...' : 'Run'}
       </button>
 
-      <div className="w-px h-5 bg-[var(--border)]" />
+      <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 2px' }} />
 
-      <button onClick={onExplain} disabled={!hasResult} className={btnCls} title="Explain results with AI">
-        <Sparkles size={12} /> Explain
+      <button onClick={onExplain} disabled={!hasResult} className={ghostCls} style={ghostStyle}
+        onMouseEnter={e => { if (hasResult) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+        <Lightbulb size={12} /> Explain
       </button>
-      <button onClick={onOptimize} disabled={!hasQuery || !activeConnection} className={btnCls} title="Optimize query with AI">
+
+      <button onClick={onOptimize} disabled={!hasQuery || !activeConnection} className={ghostCls} style={ghostStyle}
+        onMouseEnter={e => { if (hasQuery) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
         <Zap size={12} /> Optimize
       </button>
-      <button onClick={onFix} disabled={!hasError} className={btnCls} title="Fix query error with AI">
+
+      <button onClick={onFix} disabled={!hasError} className={ghostCls} style={ghostStyle}
+        onMouseEnter={e => { if (hasError) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
         <Wrench size={12} /> AI Fix
       </button>
 
       {hasExportable && (
         <>
-          <div className="w-px h-5 bg-[var(--border)]" />
-          <button onClick={() => exportCSV(queryResult!)} className={btnCls} title="Export as CSV">
+          <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 2px' }} />
+          <button onClick={() => exportCSV(queryResult!)} className={ghostCls} style={ghostStyle}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
             <Download size={12} /> CSV
           </button>
-          <button onClick={() => exportJSON(queryResult!)} className={btnCls} title="Export as JSON">
+          <button onClick={() => exportJSON(queryResult!)} className={ghostCls} style={ghostStyle}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
             <Download size={12} /> JSON
           </button>
         </>
       )}
 
-      <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-        {activeConnection ? activeConnection.db_type : 'Select a connection'}
-        <span className="ml-3">Ctrl+Enter to run</span>
-      </span>
+      {/* Right: DB label + shortcut */}
+      <div className="ml-auto flex items-center gap-3">
+        {db && (
+          <span className="text-xs font-semibold" style={{ color: db.color }}>{db.label}</span>
+        )}
+        <span
+          className="text-[11px] flex items-center gap-1 px-1.5 py-0.5 rounded"
+          style={{ border: '1px solid var(--border)', color: 'var(--text-tertiary)' }}
+        >
+          Ctrl+Enter to run
+        </span>
+      </div>
     </div>
   );
 }

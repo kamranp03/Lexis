@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Database, History, Table2, Plus, PanelLeftClose, PanelLeft, Moon, Sun } from 'lucide-react';
+import { Database, History, Table2, Moon, Sun } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import { getConnections, getTables, getHistory } from '../../api/client';
 import { ConnectionList } from '../connections/ConnectionList';
@@ -14,13 +14,20 @@ const tabs = [
 
 export function Sidebar() {
   const {
-    sidebarTab, setSidebarTab, sidebarOpen, setSidebarOpen,
-    setConnections, activeConnection, setTables, setHistory,
+    sidebarTab, setSidebarTab,
+    setConnections, activeConnection, setActiveConnection, setTables, setHistory,
     setShowConnectionModal, darkMode, toggleDarkMode,
   } = useAppStore();
 
   useEffect(() => {
-    getConnections().then(setConnections).catch(console.error);
+    getConnections().then((list) => {
+      setConnections(list);
+      const savedId = localStorage.getItem('dbpro-active-conn');
+      if (savedId && !activeConnection) {
+        const found = list.find((c) => c.id === Number(savedId));
+        if (found) setActiveConnection(found);
+      }
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -28,72 +35,64 @@ export function Sidebar() {
       getTables(activeConnection.id).then(setTables).catch(() => setTables([]));
       getHistory({ connection_id: activeConnection.id, limit: 50 }).then(setHistory).catch(() => setHistory([]));
     }
-  }, [activeConnection]);
-
-  if (!sidebarOpen) {
-    return (
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed top-3 left-3 z-10 p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
-      >
-        <PanelLeft size={18} />
-      </button>
-    );
-  }
+  }, [activeConnection?.id]);
 
   return (
-    <aside className="w-64 h-screen flex flex-col border-r border-[var(--border)] bg-[var(--bg-secondary)]">
+    <aside
+      className="w-72 h-screen flex flex-col shrink-0"
+      style={{ background: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-[var(--border)]">
-        <span className="text-sm font-semibold tracking-tight">DB Pro</span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={toggleDarkMode}
-            className="p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
-            title={darkMode ? 'Light mode' : 'Dark mode'}
-          >
-            {darkMode ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
-          >
-            <PanelLeftClose size={16} />
-          </button>
+      <div
+        className="flex items-center justify-between px-4 py-3.5"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="SmartQuery AI" className="w-7 h-7 rounded-md object-cover" />
+          <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            SmartQuery AI
+          </span>
         </div>
+        <button
+          onClick={toggleDarkMode}
+          className="p-1.5 rounded-md transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          title={darkMode ? 'Light mode' : 'Dark mode'}
+        >
+          {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-[var(--border)]">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setSidebarTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1 py-2 text-xs font-medium transition-colors ${
-              sidebarTab === tab.id
-                ? 'text-[var(--text-primary)] border-b-2 border-[var(--accent)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <tab.icon size={14} />
-            {tab.label}
-          </button>
-        ))}
+      {/* Icon Tabs */}
+      <div
+        className="flex items-center px-4"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        {tabs.map(tab => {
+          const active = sidebarTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSidebarTab(tab.id)}
+              title={tab.label}
+              className="flex items-center justify-center py-2.5 px-3 transition-colors relative"
+              style={{
+                color: active ? 'var(--accent)' : 'var(--text-tertiary)',
+                borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
+                marginBottom: '-1px',
+              }}
+            >
+              <tab.icon size={16} />
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
-        {sidebarTab === 'connections' && (
-          <div>
-            <button
-              onClick={() => setShowConnectionModal(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-            >
-              <Plus size={14} /> New connection
-            </button>
-            <ConnectionList />
-          </div>
-        )}
+        {sidebarTab === 'connections' && <ConnectionList onNew={() => setShowConnectionModal(true)} />}
         {sidebarTab === 'schema' && <SchemaExplorer />}
         {sidebarTab === 'history' && <HistoryPanel />}
       </div>
