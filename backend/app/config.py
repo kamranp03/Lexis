@@ -1,14 +1,16 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     APP_NAME: str = "DB Pro"
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{Path(__file__).parent.parent / 'dbpro.db'}"
-    GROQ_API_KEY: str = "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"
+    DATABASE_URL: str = f"sqlite+aiosqlite:///{BASE_DIR / 'dbpro.db'}"
+    GROQ_API_KEY: str = ""
 
     class Config:
-        env_file = ".env"
+        env_file = BASE_DIR / ".env.local"
 
 
 settings = Settings()

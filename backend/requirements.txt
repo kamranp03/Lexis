@@ -35,6 +35,7 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 pydantic_core==2.23.4
 pymongo==4.9.1
+PyMySQL==1.1.1
 python-dotenv==1.0.1
 PyYAML==6.0.3
 requests==2.32.5
@@ -47,7 +48,7 @@ typing_extensions==4.15.0
 urllib3==2.6.3
 uuid_utils==0.14.1
 uvicorn==0.30.6
-uvloop==0.22.1
+uvloop==0.22.1; sys_platform != "win32"
 watchfiles==1.1.1
 websockets==16.0
 xxhash==3.6.0

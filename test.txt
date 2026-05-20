@@ -2,7 +2,8 @@
   SECTION 1: MySQL TESTING
 
  — NLP Query Testing (MySQL)
-
+ -database name ->> smartquery_mysql
+ 
 1.  Show all students enrolled in Computer Science
 2.  List all courses with more than 3 credits
 3.  Find students who got grade A or A+ in any course
@@ -20,7 +21,7 @@
 ================================================================
 
  — NLP Query Testing (PostgreSQL)
-
+ - database name -> smartquery_postgres
 
 1.  Show all employees in the Engineering department
 2.  List employees with salary greater than 90000
