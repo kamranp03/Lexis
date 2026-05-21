@@ -14,14 +14,16 @@ interface Props {
   onExplain: () => void;
   onOptimize: () => void;
   onFix: () => void;
+  isFixing: boolean;
 }
 
-export function ActionBar({ onExecute, onExplain, onOptimize, onFix }: Props) {
+export function ActionBar({ onExecute, onExplain, onOptimize, onFix, isFixing }: Props) {
   const { isExecuting, activeConnection, queryResult, queryText } = useAppStore();
 
   const hasResult = !!queryResult && !queryResult.error;
   const hasError  = !!queryResult?.error;
   const hasQuery  = !!queryText.trim();
+  const canFix = !!activeConnection && hasQuery && !isExecuting && !isFixing;
   const hasExportable = hasResult && (
     (queryResult?.rows?.length ?? 0) > 0 || (queryResult?.documents?.length ?? 0) > 0
   );
@@ -65,10 +67,12 @@ export function ActionBar({ onExecute, onExplain, onOptimize, onFix }: Props) {
         <Zap size={12} /> Optimize
       </button>
 
-      <button onClick={onFix} disabled={!hasError} className={ghostCls} style={ghostStyle}
-        onMouseEnter={e => { if (hasError) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
+      <button onClick={onFix} disabled={!canFix} className={ghostCls} style={ghostStyle}
+        title={hasError ? 'Fix the last query error with AI' : 'Ask AI to correct the query in the editor'}
+        onMouseEnter={e => { if (canFix) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-        <Wrench size={12} /> AI Fix
+        {isFixing ? <Loader2 size={12} className="animate-spin" /> : <Wrench size={12} />}
+        {isFixing ? 'Fixing...' : 'AI Fix'}
       </button>
 
       {hasExportable && (

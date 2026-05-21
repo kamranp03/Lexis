@@ -54,12 +54,24 @@ FIX_PROMPT = """You are a database debugging expert. Fix the following query tha
 Database type: {db_type}
 Schema:
 {schema}
+Allowed tables/collections:
+{schema_objects}
 Original query:
 {query}
 Error message:
 {error}
 
-Respond with ONLY the corrected query, no explanation."""
+Rules:
+- Preserve the user's intent.
+- Use only table and column names that exist in the schema.
+- Never invent a table, collection, or column name.
+- If the original query already mentions a valid schema table, keep that table name exactly.
+- Only change a table or column name when it is clearly misspelled and there is a close match in the schema.
+- Fix syntax errors, misspelled SQL keywords, missing commas, missing quotes around string values, invalid operators, and malformed MongoDB JSON commands.
+- For SQL databases, return valid SQL for the given database type.
+- For MongoDB, return only the JSON command object.
+
+Respond with ONLY the corrected query, no markdown and no explanation."""
 
 EXPLORE_PROMPT = """You are a database schema expert. Answer the user's question about the database schema.
 

@@ -54,3 +54,34 @@ Type these in the NLP search bar after connecting MongoDB:
 9.  Find all pending orders
 10. Show all users from Lahore
 
+
+================================================================
+  WRONG QUERY TESTING FOR AI FIX
+================================================================
+
+MySQL Wrong Queries:
+
+1. SELEC * FORM students WHERE branch = CS;
+2. SELECT * FROM student WHERE age > 20;
+3. SELECT name, emal FROM students;
+4. SELECT * FROM courses WHERE credits >;
+5. SELECT name course_name FROM students;
+
+
+PostgreSQL Wrong Queries:
+
+1. SELEC * FORM employees WHERE city = Lahore;
+2. SELECT * FROM employes WHERE salary > 50000;
+3. SELECT name, salry FROM employees;
+4. SELECT * FROM projects WHERE status = Active;
+5. SELECT dept_name budget FROM departments;
+
+
+MongoDB Wrong Queries:
+
+1. {"collection": "user", "method": "find", "filter": {"city": "Lahore"}}
+2. {"collection": "products", "method": "fin", "filter": {"category": "Electronics"}}
+3. {"collection": "orders", "method": "find", "filter": {"status": delivered}}
+4. {"collection": "product", "method": "find", "filter": {"stock": {"$lt": 50}}}
+5. {"collection": "users", "method": "countDocumnts", "filter": {"active": true}}
+

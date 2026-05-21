@@ -17,6 +17,7 @@ function App() {
   } = useAppStore();
 
   const [aiText, setAiText] = useState('');
+  const [isFixing, setIsFixing] = useState(false);
   const darkMode = useAppStore(s => s.darkMode);
 
   // Apply dark mode class
@@ -67,17 +68,31 @@ function App() {
   }, [activeConnection, queryText]);
 
   const handleFix = useCallback(async () => {
-    if (!activeConnection || !queryResult?.error) return;
+    if (!activeConnection || !queryText.trim() || isFixing) return;
+    setIsFixing(true);
+    setAiText('AI is fixing the query...');
     try {
-      const res = await aiFixError(activeConnection.id, queryText, queryResult.error);
+      const error = queryResult?.error || 'No execution error was captured. Review and correct this query using the database schema.';
+      const res = await aiFixError(activeConnection.id, queryText, error);
       if (res.fixed_query) {
-        setQueryText(res.fixed_query);
-        setAiText('Fixed query applied to editor. Press Run to execute.');
+        const fixed = res.fixed_query.trim();
+        setQueryText(fixed);
+        setQueryResult(null);
+        setAiText([
+          'Fixed query applied to the editor. Press Run to execute it.',
+          '',
+          '```sql',
+          fixed,
+          '```',
+        ].join('\n'));
       } else if (res.error) {
         setAiText(`Error: ${res.error}`);
+      } else {
+        setAiText('AI did not return a fixed query. Check your API key and try again.');
       }
     } catch { setAiText('Failed to fix query'); }
-  }, [activeConnection, queryText, queryResult]);
+    finally { setIsFixing(false); }
+  }, [activeConnection, queryText, queryResult, isFixing, setQueryText, setQueryResult]);
 
   return (
     <div className="flex h-screen">
@@ -89,6 +104,7 @@ function App() {
           onExplain={handleExplain}
           onOptimize={handleOptimize}
           onFix={handleFix}
+          isFixing={isFixing}
         />
         <div className="flex-1 flex flex-col min-h-0">
           {/* Editor - top half */}

@@ -5,3 +5,6 @@ ppt_content.txt
 .claude
 __pycache__
 backend/.env.local
+PROJECT_EXPLANATION.md
+PRD.md
+test.txt
