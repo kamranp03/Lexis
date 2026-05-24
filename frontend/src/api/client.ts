@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({
+  baseURL: 'https://smartquery-backend.onrender.com/api',
+});
 
 // --- Types ---
 export interface ConnectionConfig {
