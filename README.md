@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ SmartQuery AI
+# ⚡ Lexis
 
 ### _Talk to your databases. Let AI do the heavy lifting._
 
@@ -15,9 +15,9 @@
 
 ---
 
-## 🧠 What is SmartQuery AI?
+## 🧠 What is Lexis?
 
-**SmartQuery AI** (internally codenamed *DB Pro*) is a local, single-user **AI-powered database management tool** that lets you interact with your databases using plain English — no SQL expertise required.
+**Lexis** (internally codenamed *DB Pro*) is a local, single-user **AI-powered database management tool** that lets you interact with your databases using plain English — no SQL expertise required.
 
 Connect to **PostgreSQL**, **MongoDB**, or **Oracle**, write raw queries or just describe what you want, and let the AI generate, explain, optimize, and fix queries for you — all wrapped in a clean, Notion-inspired UI.
 
@@ -285,6 +285,6 @@ Full interactive docs: **http://localhost:8000/docs**
 
 <div align="center">
 
-Made with ❤️ for **EDI Sem 4** · SmartQuery AI
+Made with ❤️ for **EDI Sem 4** · Lexis
 
 </div>
